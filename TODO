@@ -1,0 +1,7 @@
+Major:
+ - Wipe all password/hash buffers after usage
+ - Documentation
+ - Further documentation of U3 features
+
+minor:
+ - ETA when loading new CD image

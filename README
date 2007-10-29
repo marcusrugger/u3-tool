@@ -1,0 +1,33 @@
+Description:
+-----------
+u3_tool is a tool for unlocking and configuring U3 smart USB Flash devices.
+
+Supported device:
+----------------
+In general all U3 USB flash devices should be supported. A list of U3 compatible devices can be obtained from http://www.U3.com.
+
+The software is currently tested with the following drives:
+* Sandisk Cruzer Micro U3 512Mb
+* Verbatim Store 'N Go 1Gb
+
+Selecting a subsystem:
+---------------------
+U3-Tool can utilize a number of subsystems to access the USB drive. Which one to use depends on you Operating system and version.
+
+- sg
+The sg subsystem uses the Linux SCSI Generic interface to communicate with the device. The big advantage of this subsystem is that the u3_tool can issue commands to the device while the device is under control of the usb-storage Linux subsystem. Big disadvantage is that the sg system is somewhat limited, and thus doesn't allow all commands to be executed.
+
+- libusb
+The libusb subsystem uses libusb to send raw USB commands to the device. An advantag of this subsystem is that libusb should work on all Linux kernels >= 2.4, and should even work other operating systems.
+However...  For libusb to be able send commands to the USB device it needs to claim the device for its self to prevent total chaos in the communication. This requires the Linux usb-storage system, which makes the device available as disk to the end-user, to release the device. So effectively this means that you can't use the device as disk and use U3-tool at the same time.
+
+- spt
+The spt subsystem uses MS Windows SCSI pass through interface to communicate with the device. This is similar to the sg subsystem, with the difference that this is Windows specific. Als contrary to the sg subsystem, this works well!
+
+Compilation:
+------------
+If you have downloaded the source:
+ - enter the src/ directory
+ - On Linux type 'make u3_tool_sg' if you want to use the 'sg' subsystem, 'make u3_tool' for the 'libusb' subsystem or 'make all' for both.
+ - On Windows you need the mingw32 compiler. Type 'make -f Makefile.win' or open the u3_tool.dev file with Bloodshed's Dev-C++(http://www.bloodshed.net/devcpp.html).
+
