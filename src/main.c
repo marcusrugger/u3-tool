@@ -392,7 +392,7 @@ void usage(const char *name) {
 	printf("\t-D                Dump all raw info(for debug)\n");
 	printf("\t-e                Enable device security\n");
 	printf("\t-h                Print this help message\n");
-	printf("\t-i                Display device info\n");
+//TODO:	printf("\t-i                Display device info\n");
 	printf("\t-l <cd image>     Load CD image into device\n");
 	printf("\t-p <cd size>      Repartition device\n");
 	printf("\t-u                Unlock device\n");
