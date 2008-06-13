@@ -36,4 +36,7 @@ char* u3_error_msg(u3_handle_t *device);
 /* set a new u3 error */
 void u3_set_error(u3_handle_t *device, const char *fmt, ...);
 
+/* prepend a message to the current u3 error */
+void u3_prepend_error(u3_handle_t *device, const char *fmt, ...);
+
 #endif // __U3_ERROR_H__

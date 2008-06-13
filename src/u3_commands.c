@@ -159,6 +159,7 @@ int u3_partition(u3_handle_t *device, uint32_t cd_size) {
 	// calculate data partition size
 	if (cd_size != 0) {
 		if (u3_partition_sector_round(device, round_up, &cd_size) != U3_SUCCESS) {
+			u3_prepend_error(device, "Failed rounding partition sectors");
 			return U3_FAILURE;
 		}
 	}
@@ -166,6 +167,7 @@ int u3_partition(u3_handle_t *device, uint32_t cd_size) {
 	if (u3_read_device_property(device, 3, (uint8_t *) &device_properties,
 			sizeof(device_properties)) != U3_SUCCESS)
 	{
+		u3_prepend_error(device, "Failed reading device property 0x03");
 		return U3_FAILURE;
 	}
 
@@ -182,6 +184,7 @@ int u3_partition(u3_handle_t *device, uint32_t cd_size) {
 
 	data_size = device_properties.device_size - cd_size;
 	if (u3_partition_sector_round(device, round_down, &data_size) != U3_SUCCESS) {
+		u3_prepend_error(device, "Failed rounding partition sectors");
 		return U3_FAILURE;
 	}
 	
@@ -436,6 +439,7 @@ int u3_enable_security(u3_handle_t *device, const char *password) {
 //TODO: allow user to determine secure zone size... However currently we don't
 // understand why disable security only works on a fully secured partition...
 	if (u3_data_partition_info(device, &dp_info) != U3_SUCCESS) {
+		u3_prepend_error(device, "Failed reading data partition info");
 		return U3_FAILURE;
 	}
 	secure_zone_size = dp_info.total_size;
@@ -444,6 +448,8 @@ int u3_enable_security(u3_handle_t *device, const char *password) {
 		if (u3_security_sector_round(device, round_up,
 				&secure_zone_size) != U3_SUCCESS)
 		{
+			u3_prepend_error(device,
+				"Failed rounding secure zone sectors");
 			return U3_FAILURE;
 		}
 	}

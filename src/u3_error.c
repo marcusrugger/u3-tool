@@ -18,6 +18,7 @@
  */ 
 #include "u3_error.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -30,5 +31,27 @@ void u3_set_error(u3_handle_t *device, const char *fmt, ...) {
 
 	va_start(ap, fmt);
 	vsnprintf(device->err_msg, U3_MAX_ERROR_LEN, fmt, ap);
+	device->err_msg[U3_MAX_ERROR_LEN-1] = '\0';
 	va_end(ap);
+
+}
+
+void u3_prepend_error(u3_handle_t *device, const char *fmt, ...) {
+	va_list ap;
+	char *old_msg;
+
+	old_msg = strdup(device->err_msg);
+	if (old_msg == NULL) return;
+
+	va_start(ap, fmt);
+	vsnprintf(device->err_msg, U3_MAX_ERROR_LEN, fmt, ap);
+	device->err_msg[U3_MAX_ERROR_LEN-1] = '\0';
+	va_end(ap);
+
+	strncat(device->err_msg, ": ",
+		U3_MAX_ERROR_LEN - strlen(device->err_msg) - 1);
+	strncat(device->err_msg, old_msg,
+		U3_MAX_ERROR_LEN - strlen(device->err_msg) - 1);
+
+	free(old_msg);
 }

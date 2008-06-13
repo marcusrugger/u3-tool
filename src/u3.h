@@ -21,7 +21,7 @@
 
 #include <stdint.h>
 
-#define U3_MAX_ERROR_LEN	100	// Max. length of error msg.
+#define U3_MAX_ERROR_LEN	1024	// Max. length of error msg.
 #define U3_SECTOR_SIZE		512	// size of one sector in the u3 system
 #define U3_BLOCK_SIZE		2048	// size of one block in the u3 system
 
