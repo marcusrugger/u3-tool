@@ -1,0 +1,579 @@
+
+---
+
+>> 0x00
+description:
+ Read a page with some sort of device info
+
+type: request
+
+command:
+
+ CBWCB = 0xFF 0x00 0x00 0x03 0x00 0x27 0x00 0x00 0x00 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0	0xFF		SCSI opcode
+ 1-2	0x0000		command
+ 3-4	0x0003		Page number
+ 5-6	0x27		Request data length
+ 9	0x0		??? sofware update tool also uses 0x01 here
+
+ valid page numbers according to bCSWStatus:
+  verbatime: 0x3, 0x4, 0x6, 0x8, 0xa, 0xc, 0xe, 0x13, 0x14
+
+data:
+ 6+ bytes
+
+ 0000  03 00 01 00 27 00                                 |....'.          |
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0-1	0x0003		page number
+ 2-3	0x0001		??? mostly 0x01, once 0x03
+ 4-5	0x0027		total usefull data length (including 6 byte header)
+
+
+page 0x03:
+
+ 0000  03 00 01 00 27 00 77 00  00 00 03 81 07 06 54 30  |....'.w.......T0|
+ 0016  30 30 30 31 31 41 31 41  41 31 31 41 41 41 31 81  |00011A1AA11AAA1.|
+ 0032  07 06 54 91 4e 0f 00                              |..T.N..|
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0-5			header(see above)
+ 6			Real size of full record...????
+ 7-11			??? same for both verbatime and sandisk
+ 11-14	0x54060781	??? same as @ byte 31 (actual value different on verbatim)
+ 15-30	"000011A1AA11AAA1"	Serial number
+ 31-34	0x54060781	??? same as @ byte 11
+ 35-38	0x000f4e91	Device size in 512-byte blocks
+
+page 0x0c:
+
+ 0000  0c 00 01 00 0a 00 10 27  00 00                    |.......'..      |
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0-5			header(see above)
+ 6-9	0x00002710	Maximum wrong password try for secure zone.
+
+---
+
+>> 0x20
+description:
+ Round CD size to a value the device likes
+
+type: action
+
+command:
+ CBWCB = 0xFF 0x20 0x00 0x02 0xFF 0x03 0x00 0x00 0x00 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0	0xFF		scsi opcode
+ 1-2	0x0020		command
+ 3	0x02		??? can atleast be 0x02 and 0x03 but not 0, 1, 4, is
+			this some sort of domain id to select the partition,
+			like in 0x21, byte 3??? the verbatim is less picky and
+			accepts all values...
+ 4-7	0x3FF		Value to round (in 512-byte sectors)
+ 8	0x0		Direction to round(0x00 = down, 0x01 = up)
+
+data:
+ 4 bytes
+
+ 0000  00 02 00 00                                      |....|
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0-3	0x200		Rounded value
+
+---
+
+>> 0x21
+description:
+ get information about the partition configuration
+
+type: request
+
+command:
+ CBWCB = 0xFF 0x21 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+data:
+
+ 0000  02 02 00 00 00 91 1e 0f  00 03 01 00 00 00 30 00  |..............0.|
+ can be read in any multiple of 8 all dat beyond the above data is zero(0)
+
+ u3-remover uses the following data(IIRC), (0x0f4e91 == full drive size):
+ 0000  01 02 00 00 00 91 4e 0f  00                       |.........       |
+
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0	02		amount of available records, where 1 record = 8 byte???
+ 1	02		??? some sort of domain id???
+ 3-4	00 00 00	??
+ 5-8	0x000F1E91	size of data partition in 512-byte sectors
+ 9	0x03		?? some sort of domain id????
+ 10	0x01		?? WARNING: If set to 0 on Sandisk cruzer, cd drive
+			will show up as direct-access, but can't be used, also
+			drive doesn't react to command 0x00, page 3 and you
+			won't be able to re-partition device!!!!
+ 11-12	00 00		??
+ 13-15	0x003000	size of cdrom partitoin in 512-byte sectors
+
+---
+
+>> 0x22
+description:
+ Repartition device
+
+type: action
+
+command:
+ CBWCB = 0xFF 0x22 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+data:
+ 0000  02 02 00 00 00 91 1e 0f  00 03 01 00  00 00 30 00 |..............0.|
+ 0016  00                                                |.               |
+
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0	0x02		amount of dword of data(+1byte+1dword=packet_size)
+ 1-4	0x00000002	???
+ 5-8	0x000f1e91	Size of data partition in 512-byte sectors
+ 9-12	0x00000103	??? 0x0003 make's it a direct access partition.(but can't partition afterwards, and page 3 of command 0x0000 isn't accessible anymore...)
+ 13-16	0x00003000	Size of CD partition in 512-byte sectors
+
+---
+
+>> 0x42
+description:
+ Write block of data to CD-rom partition
+
+type: action
+
+command:
+ CBWCB = 0xFF 0x42 0x00 0x01 0x00 0x00 0x01 0x1D 0x00 0x00 0x00 0x01 
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0	0xFF		scsi opcode
+ 1-2	0x42		command
+ 3	0x01		???
+ 4-7	0x0000011D	Block Address (Big Endian!!!!!!!)
+ 8-11	0x01		??? (Big Endian?)
+
+data:
+ A 2048 byte block
+
+---
+
+>> 0x61
+description:
+ read out hidden data/config storage. Looks the same as with mDrive.
+
+type: request
+
+command:
+ CBWCB = 0xFF 0x61 0x00 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+data:
+
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+---
+
+>> 0x63
+description:
+ read out hidden data/config storage. Looks the similar as with mDrive.
+
+type: request
+
+command:
+ CBWCB = 0xFF 0x63 0x00 0x00 0x00 0x55 0x33 0x49 0x4E 0x50 0x52 0x50
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+data:
+
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+---
+
+>> 0xA0
+description:
+ get some sort of data partition information
+
+type: request
+
+command:
+
+ CBWCB = 0xFF 0xA0 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+data:
+ 16 byte
+
+ 0000  40 ab 1d 00 00 00 00 00  00 00 00 00 00 00 00 00  |@...............|
+
+ 0000  40 ab 1d 00 40 ab 1d 00  01 00 00 00 00 00 00 00  |@...@...........| (secured)
+
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0-3	0x001dab40	Total data partition size
+ 4-7	0x001dab40	Amount of data partition encrypted????
+ 8-11	0x00000001	Lock(=0) or Unlocked(=1)
+ 12-15	0x00000000	Wrong password try counter
+
+---
+
+>> 0xA1
+description:
+ FUZED
+
+type: Request?
+
+command:
+
+ CBWCB = 0xFF 0xA1 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0			scsi opcode
+ 1-2			command
+ 3	0		Failes on Sandisk if != 0
+ 4-			changing these doesn't seem to have any effect
+
+data:
+
+ data is random, and changes due to executing commands
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+
+---
+
+>> 0xA2
+description:
+ Secure data partition
+
+ Password hash is a md5 sum of the unicode password including the terminating
+ null. So for a password of 'a' the following byte stream is fead to the md5
+ function: 0x61 0x00 0x00 0x00 == UNICODE "a\0"
+
+ It seems that if the whole of the data partition is made secure zone, then
+ the data currently on the data partition is accessible in the secure zone.
+ If only a part of the data partition is made secure zone than the first part
+ of the data on the partition is retained and the rest isn't accessible. In
+ this case the secure zone will contain garbage(the data on that was on that
+ part of the data partition but decrypted with an other key).
+
+ If the device is already secured and this command is issued again, the current
+ data on the device is lost(if secure zone == 100%).
+
+type: action
+
+command:
+
+ CBWCB = 0xFF 0xA2 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+data:
+ 20 byte
+
+ 0000  40 ab 1d 00 33 2c e7 85  e9 73 57 4a 1c 5f da f3  |@...3,...sWJ._..|
+ 0016  ee e3 f0 83                                       |....|
+
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0-3	0x001dab40	Size of private zone????
+ 4-19	...		Password hash ( pass='a')
+
+
+---
+
+>> 0xA3
+description:
+ value rounding for data partition securing
+
+type: request
+
+command:
+ CBWCB = 0xFF 0xA3 0x00 0x00 0x40 0xAB 0x1D 0x00 0x01 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0	0xFF		scsi opcode
+ 1-2	0x00A3		Command
+ 3	0x00		???
+ 4-7	0x001DAB40	Value to round (in 512-byte sectors)
+ 8	0x01		Direction to round(0x00 = down, 0x01 = up)
+ 
+
+data:
+ 4 byte
+
+ 0000  40 ab 1d 00                                      |@...|
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0-3	0x001DAB40	Rounded value
+
+---
+
+>> 0xA4
+description:
+ unlock device
+
+ Password hash is a md5 sum of the unicode password including the terminating
+ null. So for a password of 'a' the following byte stream is fead to the md5
+ function: 0x61 0x00 0x00 0x00 == UNICODE "a\0"
+
+type: action
+
+command:
+
+ CBWCB = 0xFF 0xA4 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+data:
+ 16 byte
+
+ 0000  33 2c e7 85 e9 73 57 4a  1c 5f da f3 ee e3 f0 83  |3,...sWJ._......|
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0-15	...		password hash (pass='a')
+
+---
+
+>> 0xA6
+description:
+ change password
+
+ Password hash is a md5 sum of the unicode password including the terminating
+ null. So for a password of 'a' the following byte stream is fead to the md5
+ function: 0x61 0x00 0x00 0x00 == UNICODE "a\0"
+
+type: action
+
+command:
+
+ CBWCB = 0xFF 0xA6 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+data:
+
+ 0000  33 2c e7 85 e9 73 57 4a  1c 5f da f3 ee e3 f0 83  |3,...sWJ._......|
+ 0016  c0 51 c1 bb 98 b7 1c cb  15 b0 cf 9c 67 d1 43 ee  |.Q..........g.C.|
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0-15	...		Old password hash ( pass='a')
+ 16-31	...		New password hash ( pass='b')
+
+---
+
+>> 0xA7
+description:
+ Remove security
+
+ Password hash is a md5 sum of the unicode password including the terminating
+ null. So for a password of 'a' the following byte stream is fead to the md5
+ function: 0x61 0x00 0x00 0x00 == UNICODE "a\0"
+
+ hmm... if security zone size != size of data partition, then this fails!!!
+ it returns a failed status but doesn't increase the password try counter,
+ even if password was incorrect.... to remove the secure zone if it doesn't
+ fully occupy the data partition, recreate the secure zone with maximum size.
+ > Possible cause: If this command is issued the secure zone becomes the public
+ zone, and thus all data on the disk will be retained. It is suspected that all
+ partitions/zones are stored encrypted on the flash device(Yes, even the public
+ zone). So, if this command is issued the secure zone key is decrypted(if
+ encrypted at all) and the zone is marked as public. Logically this would not
+ work if there is a public and secure zone. Then you would end up with two
+ public zone's with different encryptions keys.
+
+ Byte 3 of command does something... but still doesn't allow for removing half
+ secure zones.
+
+type: action
+
+command:
+
+ CBWCB = 0xFF 0xA7 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+data:
+
+ 0000  c0 51 c1 bb 98 b7 1c cb  15 b0 cf 9c 67 d1 43 ee  |.Q..........g.C.|
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0-15	...		Password hash (in this case 'b')
+
+---
+
+>> 0x100
+description:
+ seen used after a 0xA4(with some normal scsi stuff in between...).
+ generate reset some sort of reset or insert condition on data disk. Linux old 2.4
+ usb-storage sees it as a disconnect of the drive.
+
+type: 
+
+command:
+
+ CBWCB = 0xFF 0x00 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+data:
+ No data....
+
+
+---
+
+>> 0x101
+description:
+ disconnect's and possibly reconnects device
+
+type: action
+
+command:
+
+ CBWCB = 0xFF 0x01 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+data:
+  12 bytes
+
+  0000  50 00 00 00 40 9c 00 00  01 00 00 00              |P...@.......|
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 8	0x01		If 1 reconnect after disconnect, else not
+ all other byte's dont seem to have any effect...
+
+---
+
+>> 0x103
+description:
+Get chip maker and version
+
+type: request
+
+command:
+
+ CBWCB = 0xFF 0x03 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+data:
+ 24 bytes
+
+ 0000  33 2e 32 31 00 00 00 00  53 61 6e 44 69 73 6b 20  |3.21....SanDisk |
+ 0016  00 00 00 00 00 00 00 00                           |........|
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+ 0-7	"3.21"		Chip version
+ 8-23	"SanDisk"	Chip maker
+
+
+
+
+
+
+
+possible read commands:
+0x20
+0x21
+0x61
+0x63
+0x68
+0x6b 512?
+0x81 128-byte
+0x84 64-byte
+0x85 64-byte
+0x88 64-byte
+0xa1 4-byte
+0xc1
+0xe2 = read random?, 64-byte
+
+0x102 512-byte
+
+Write:
+0x01 -> 0x1f
+0x22 -> 0x40
+0x42
+0x60
+0x62
+0x6a
+0x6c
+0x6d
+0x6e
+0x82 128 byte
+0x83 64 byte?
+0x86
+0x87
+0xc0
+0xc2
+
+
+
+
+---
+
+>>
+description:
+
+type: 
+
+command:
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+data:
+
+
+ byte	data		description
+ ------------------------------------------------------------------------------
+
+
