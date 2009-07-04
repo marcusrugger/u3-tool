@@ -7,13 +7,13 @@ CFLAGS += -g -Wall
 
 .PHONY: all clean
 
-all: u3_tool u3_tool_sg
+all: u3_tool u3_tool_usb
 
-u3_tool: $(OBJ) $(OBJ_USB)
-	$(CC) -o u3_tool $(OBJ) $(OBJ_USB) $(LDFLAGS) -lusb 
+u3_tool: $(OBJ) $(OBJ_SG)
+	$(CC) -o u3_tool $(OBJ) $(OBJ_SG) $(LDFLAGS)
 
-u3_tool_sg: $(OBJ) $(OBJ_SG)
-	$(CC) -o u3_tool_sg $(OBJ) $(OBJ_SG) $(LDFLAGS)
+u3_tool_usb: $(OBJ) $(OBJ_USB)
+	$(CC) -o u3_tool_usb $(OBJ) $(OBJ_USB) $(LDFLAGS) -lusb 
 
 u3_tool_debug: $(OBJ) $(OBJ_DEBUG)
 	$(CC) -o u3_tool_debug $(OBJ) $(OBJ_DEBUG) $(LDFLAGS)
