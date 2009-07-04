@@ -38,13 +38,15 @@
 #define MAX_FILENAME_STRING_LENGTH 1024
 #define MAX_PASSWORD_LENGTH 1024
 
-char *version = "0.1";
+char *version = "0.2";
 
 int debug = 0;
 int batch_mode = 0;
 
-enum action_t { unknown, load, partition, dump, unlock, change_password,
+enum action_t { unknown, load, partition, dump, info, unlock, change_password,
 		enable_security, disable_security };
+
+/********************************** Helpers ***********************************/
 
 /**
  * Ask confirmation of user.
@@ -81,6 +83,66 @@ int confirm() {
 	} while (!done);
 
 	return retval;
+}
+
+
+/**
+ * Symbols of size multiplication factors.
+ */
+char factor_symbols[] = "kMGTPE";
+
+/**
+ * Print bytes is human readable fashion.
+ *
+ * @param size	Data size to print
+ */
+void print_human_size(size_t size) {
+	float fsize = 0;
+	unsigned int factor = 0;
+	
+	fsize = size;
+	while (fsize > 1024) {
+		fsize /= 1024;
+		factor++;
+	}
+
+	printf("%.2f %cB", fsize, factor_symbols[factor-1]);
+}
+
+/**
+ * Get pin tries left
+ *
+ * @param device	U3 device handle
+ * @param tries		Used to return the number of tries left till device is blocked, or 0 if already blocked
+ *
+ * @returns		U3_SUCCESS if successful, else U3_FAILURE and
+ * 			an error string can be obtained using u3_error()
+ */
+int get_tries_left(u3_handle_t *device, int *tries) {
+	struct dpart_info dpinfo;
+	struct property_0C security_properties;
+
+ 	*tries = 0;
+
+	if (u3_data_partition_info(device, &dpinfo) != U3_SUCCESS) {
+		fprintf(stderr, "u3_data_partition_info() failed: %s\n",
+			u3_error_msg(device));
+		return U3_FAILURE;
+	}
+
+	if (u3_read_device_property(device, 0x0C,
+				(uint8_t *) &security_properties,
+				sizeof(security_properties)
+				) != U3_SUCCESS)
+	{
+		fprintf(stderr, "u3_read_device_property() failed for "
+			"property 0x0C: %s\n", u3_error_msg(device));
+		return U3_FAILURE;
+	}
+
+	*tries = security_properties.max_pass_try - dpinfo.pass_try;
+
+	return U3_SUCCESS;
 }
 
 /********************************** Actions ***********************************/
@@ -123,7 +185,7 @@ int do_load(u3_handle_t *device, char *iso_filename) {
 		fprintf(stderr, "CD image(%lu byte) is to big for current cd "
 			"partition(%u byte), please repartition device.\n",
 			file_stat.st_size,
-			pinfo.cd_size * U3_SECTOR_SIZE);
+			U3_SECTOR_SIZE * pinfo.cd_size);
 		return EXIT_FAILURE;
 	}
 
@@ -199,7 +261,24 @@ int do_partition(u3_handle_t *device, char *size_string) {
 
 int do_unlock(u3_handle_t *device, char *password) {
 	int result=0;
+	int tries_left=0;
 
+	// check password retry counter
+	if (get_tries_left(device, &tries_left) != U3_SUCCESS) {
+		return EXIT_FAILURE;
+	}
+
+	if (tries_left == 0) {
+		printf("Unable to unlock, device is blocked\n");
+		return EXIT_FAILURE;
+	} else if (tries_left == 1) {
+		printf("Warning: This is the your last password try. If this attempt fails,");
+		printf(" all data on the data partition is lost.\n");
+		if (!confirm())
+			return EXIT_FAILURE;
+	}
+
+	// unlock device
 	if (u3_unlock(device, password, &result) != U3_SUCCESS) {
 		fprintf(stderr, "u3_unlock() failed: %s\n", u3_error_msg(device));
 		return EXIT_FAILURE;
@@ -218,7 +297,24 @@ int do_change_password(u3_handle_t *device, char *password,
 	char *new_password)
 {
 	int result=0;
+	int tries_left=0;
 
+	// check password retry counter
+	if (get_tries_left(device, &tries_left) != U3_SUCCESS) {
+		return EXIT_FAILURE;
+	}
+
+	if (tries_left == 0) {
+		printf("Unable to change password, device is blocked\n");
+		return EXIT_FAILURE;
+	} else if (tries_left == 1) {
+		printf("Warning: This is the your last password try. If this attempt fails,");
+		printf(" all data on the data partition is lost.\n");
+		if (!confirm())
+			return EXIT_FAILURE;
+	}
+
+	// change password
 	if (u3_change_password(device, password, new_password, &result)
 		!= U3_SUCCESS)
 	{
@@ -245,10 +341,20 @@ int do_enable_security(u3_handle_t *device, char *password) {
 	return EXIT_SUCCESS;
 }
 
-int do_disable_security(u3_handle_t *device, char *password) {
+int do_disable_security(u3_handle_t *device) {
 	int result=0;
 
-	if (u3_disable_security(device, password, &result) != U3_SUCCESS) {
+	// the enable security command is always possible without the correct
+	// password, even if the device is locked. To work around asking for
+	// a password we first call the enable security command with a known
+	// password before calling disable security.
+	if (u3_enable_security(device, "password") != U3_SUCCESS) {
+		fprintf(stderr, "u3_enable_security() failed: %s\n",
+			u3_error_msg(device));
+		return EXIT_FAILURE;
+	}
+
+	if (u3_disable_security(device, "password", &result) != U3_SUCCESS) {
 		fprintf(stderr, "u3_disable_security() failed: %s\n",
 			u3_error_msg(device));
 		return EXIT_FAILURE;
@@ -261,6 +367,82 @@ int do_disable_security(u3_handle_t *device, char *password) {
 		printf("Password incorrect\n");
 		return EXIT_FAILURE;
 	}
+}
+
+int do_info(u3_handle_t *device) {
+	struct part_info pinfo;
+	struct dpart_info dpinfo;
+	struct chip_info cinfo;
+	struct property_03 device_properties;
+	struct property_0C security_properties;
+
+	if (u3_partition_info(device, &pinfo) != U3_SUCCESS) {
+		fprintf(stderr, "u3_partition_info() failed: %s\n",
+			u3_error_msg(device));
+		return EXIT_FAILURE;
+	}
+
+	if (u3_data_partition_info(device, &dpinfo) != U3_SUCCESS) {
+		fprintf(stderr, "u3_data_partition_info() failed: %s\n",
+			u3_error_msg(device));
+		return EXIT_FAILURE;
+	}
+
+	if (u3_chip_info(device, &cinfo) != U3_SUCCESS) {
+		fprintf(stderr, "u3_chip_info() failed: %s\n",
+			u3_error_msg(device));
+		return EXIT_FAILURE;
+	}
+
+	if (u3_read_device_property(device, 0x03,
+				(uint8_t *) &device_properties,
+				sizeof(device_properties)
+				) != U3_SUCCESS)
+	{
+		fprintf(stderr, "u3_read_device_property() failed for "
+			"property 0x03: %s\n", u3_error_msg(device));
+		return EXIT_FAILURE;
+	}
+
+	if (u3_read_device_property(device, 0x0C,
+				(uint8_t *) &security_properties,
+				sizeof(security_properties)
+				) != U3_SUCCESS)
+	{
+		fprintf(stderr, "u3_read_device_property() failed for "
+			"property 0x0C: %s\n", u3_error_msg(device));
+		return EXIT_FAILURE;
+	}
+
+	printf("Total device size:   ");
+	print_human_size(1ll * U3_SECTOR_SIZE * device_properties.device_size);
+	printf(" (%llu bytes)\n", 1ll * U3_SECTOR_SIZE * device_properties.device_size);
+
+	printf("CD size:             ");
+	print_human_size(1ll * U3_SECTOR_SIZE * pinfo.cd_size);
+	printf(" (%llu bytes)\n", 1ll * U3_SECTOR_SIZE * pinfo.cd_size);
+
+	if (dpinfo.secured_size == 0) {
+		printf("Data partition size: ");
+		print_human_size(1ll * U3_SECTOR_SIZE * dpinfo.total_size);
+		printf(" (%llu bytes)\n", 1ll * U3_SECTOR_SIZE * dpinfo.total_size);
+	} else {
+		printf("Secured zone size:   ");
+		print_human_size(1ll * U3_SECTOR_SIZE * dpinfo.secured_size);
+		printf(" (%llu bytes)\n", 1ll * U3_SECTOR_SIZE * dpinfo.secured_size);
+
+		printf("Secure zone status:  ");
+		if(dpinfo.unlocked) {
+			printf("unlocked\n");
+		} else {
+			if (security_properties.max_pass_try == dpinfo.pass_try) {
+				printf("BLOCKED!\n");
+			} else {
+				printf("locked (%u tries left)\n", security_properties.max_pass_try - dpinfo.pass_try);
+			}
+		}
+	}
+	return EXIT_SUCCESS;
 }
 
 int do_dump(u3_handle_t *device) {
@@ -279,10 +461,10 @@ int do_dump(u3_handle_t *device) {
 	} else {
 		printf("Partition info:\n");
 		printf(" - Partition count: 0x%.2x\n", pinfo.partition_count);
-		printf(" - Data partition size: %d byte(0x%.8x)\n",
-			pinfo.data_size * U3_SECTOR_SIZE, pinfo.data_size);
+		printf(" - Data partition size: %llu byte(0x%.8x)\n",
+			1ll * U3_SECTOR_SIZE * pinfo.data_size, pinfo.data_size);
 		printf(" - Unknown1: 0x%.8x\n", pinfo.unknown1);
-		printf(" - CD size: %d byte(0x%.8x)\n", pinfo.cd_size*U3_SECTOR_SIZE,
+		printf(" - CD size: %llu byte(0x%.8x)\n", 1ll * U3_SECTOR_SIZE * pinfo.cd_size,
 			pinfo.cd_size);
 		printf(" - Unknown2: 0x%.8x\n", pinfo.unknown2);
 		printf("\n");
@@ -294,9 +476,10 @@ int do_dump(u3_handle_t *device) {
 		retval = EXIT_FAILURE;
 	} else {
 		printf("Data partition info:\n");
-		printf(" - Data partition size: %d byte(0x%.8x)\n",
-			dpinfo.total_size * U3_SECTOR_SIZE, dpinfo.total_size);
-		printf(" - Secured zone size: 0x%.8x\n", dpinfo.secured_size);
+		printf(" - Data partition size: %llu byte(0x%.8x)\n",
+			1ll * U3_SECTOR_SIZE * dpinfo.total_size , dpinfo.total_size);
+		printf(" - Secured zone size: %llu byte(0x%.8x)\n",
+			1ll * U3_SECTOR_SIZE *  dpinfo.secured_size, dpinfo.secured_size);
 		printf(" - Unlocked: 0x%.8x\n", dpinfo.unlocked);
 		printf(" - Password try: 0x%.8x\n", dpinfo.pass_try);
 		printf("\n");
@@ -333,8 +516,8 @@ int do_dump(u3_handle_t *device) {
 			retval = EXIT_FAILURE;
 		} else {
 			printf("Property page 0x03:\n");
-			printf(" - Device size: 0x%.8x\n",
-				device_properties.device_size);
+			printf(" - Device size: %llu byte(0x%.8x)\n",
+				1ll * U3_SECTOR_SIZE * device_properties.device_size, device_properties.device_size);
 			printf(" - Device serial: %.*s\n",U3_MAX_SERIAL_LEN,
 				device_properties.serial);
 			printf(" - Full record length: 0x%.8x\n",
@@ -348,8 +531,6 @@ int do_dump(u3_handle_t *device) {
 			printf("\n");
 		}
 	}
-
-
 
 	if (u3_read_device_property(device, 0x0C,
 				(uint8_t *) &security_properties,
@@ -434,7 +615,7 @@ int main(int argc, char *argv[]) {
 	//
 	// parse options
 	//
-	while ((c = getopt(argc, argv, "cdDehl:p:uvVz")) != -1) {
+	while ((c = getopt(argc, argv, "cdDehil:p:uvVz")) != -1) {
 		switch (c) {
 			case 'c':
 				action = change_password;
@@ -444,6 +625,9 @@ int main(int argc, char *argv[]) {
 				break;
 			case 'e':
 				action = enable_security;
+				break;
+			case 'i':
+				action = info;
 				break;
 			case 'l':
 				action = load;
@@ -486,8 +670,7 @@ int main(int argc, char *argv[]) {
 	}
 	device_name = argv[optind];
 		
-	if ((action == unlock || action == change_password
-	     || action == disable_security)
+	if ((action == unlock || action == change_password)
 	     && ask_password)
 	{
 		int proceed = 0;
@@ -552,6 +735,9 @@ int main(int argc, char *argv[]) {
 		case dump:
 			retval = do_dump(&device);
 			break;
+		case info:
+			retval = do_info(&device);
+			break;
 		case unlock:
 			retval = do_unlock(&device, password);
 			break;
@@ -559,13 +745,19 @@ int main(int argc, char *argv[]) {
 			retval = do_change_password(&device, password, new_password);
 			break;
 		case enable_security:
-			retval = do_enable_security(&device, new_password);
+			printf("WARNING: This will delete all data on the data ");
+			printf("partition\n");
+			if (confirm())
+				retval = do_enable_security(&device, new_password);
 			break;
 		case disable_security:
-			retval = do_disable_security(&device, password);
+			printf("WARNING: This will delete all data on the data ");
+			printf("partition\n");
+			if (confirm())
+				retval = do_disable_security(&device);
 			break;
 		default:
-			printf("Don't know what to do... please specify an action\n");
+			fprintf(stderr, "LOGIC_ERROR: Don't know what to do... please specify an action\n");
 			break;
 	}
 
