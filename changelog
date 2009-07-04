@@ -1,0 +1,12 @@
+
+0.2:
+ - Added Info command
+ - Don't ask password for disable security
+ - Print size's in human readable format
+ - Fixed printing of large device size
+ - Warn if user is about to block device
+ - Handle blocked device better
+ - Make sg subsystem the default
+
+0.1:
+ - Initial version
