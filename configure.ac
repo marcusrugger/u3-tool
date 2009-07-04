@@ -9,10 +9,16 @@ AC_CONFIG_HEADER([config.h])
 
 # Checks for programs.
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_INSTALL
 
 # Checks for libraries.
-PKG_CHECK_MODULES([LIBUSB], [libusb])
+PKG_CHECK_MODULES([LIBUSB], [libusb],
+	[ 
+		LIBUSB_MSG=yes
+	],
+	[ LIBUSB_MSG=no ])
+AM_CONDITIONAL(HAVE_LIBUSB, [test x$LIBUSB_MSG = xyes])
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -37,3 +43,8 @@ AC_CONFIG_FILES([Makefile
                  doc/Makefile
                  src/Makefile])
 AC_OUTPUT
+
+echo ""
+echo "Options:"
+echo "LibUSB used:     ${LIBUSB_MSG}"
+echo ""
