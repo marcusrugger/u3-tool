@@ -760,7 +760,7 @@ int main(int argc, char *argv[]) {
 				retval = do_disable_security(&device);
 			break;
 		default:
-			fprintf(stderr, "LOGIC_ERROR: Don't know what to do... please specify an action\n");
+			fprintf(stderr, "No action specified, use '-h' option for help.\n");
 			break;
 	}
 
