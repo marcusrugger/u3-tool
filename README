@@ -1,13 +1,19 @@
 Description:
 -----------
-u3_tool is a tool for unlocking and configuring U3 smart USB Flash devices.
+u3-tool is a tool for unlocking and configuring U3 smart USB Flash devices.
+
+Main features:
+ - Change CD partition size and Replace CD image
+ - (de-)secure data partition
+ - Unlock secured data partition
 
 Supported device:
 ----------------
-In general all U3 USB flash devices should be supported. A list of U3 compatible devices can be obtained from http://www.U3.com.
+In theory all U3 USB flash devices should be supported. A list of U3 compatible devices can be obtained from http://www.U3.com.
 
 The software is currently tested with the following drives:
 * Sandisk Cruzer Micro U3 512Mb
+* Sandisk Cruzer Micro U3 4Gb
 * Verbatim Store 'N Go 1Gb
 
 Selecting a subsystem:
@@ -15,19 +21,27 @@ Selecting a subsystem:
 U3-Tool can utilize a number of subsystems to access the USB drive. Which one to use depends on you Operating system and version.
 
 - sg
-The sg subsystem uses the Linux SCSI Generic interface to communicate with the device. The big advantage of this subsystem is that the u3_tool can issue commands to the device while the device is under control of the usb-storage Linux subsystem. Big disadvantage is that the sg system is somewhat limited, and thus doesn't allow all commands to be executed.
+The sg subsystem uses the Linux SCSI Generic interface to communicate with the device. The big advantage of this subsystem is that the u3-tool can issue commands to the device while the device is under control of the usb-storage Linux subsystem. This means that u3-tool can be used without having to unmount the volume or unassociate the device from any kernel drivers. Big disadvantage is that the sg system on older kernels(<2.6.22??) don't allow all commands to be executed.
+When building on Unix the 'u3-tool' executable uses this subsystem.
 
-- libusb
-The libusb subsystem uses libusb to send raw USB commands to the device. An advantag of this subsystem is that libusb should work on all Linux kernels >= 2.4, and should even work other operating systems.
-However...  For libusb to be able send commands to the USB device it needs to claim the device for its self to prevent total chaos in the communication. This requires the Linux usb-storage system, which makes the device available as disk to the end-user, to release the device. So effectively this means that you can't use the device as disk and use U3-tool at the same time.
+- LibUSB
+The LibUSB subsystem uses LibUSB to send raw USB commands to the device. The advantage of this subsystem is that LibUSB should work on all Linux kernels >= 2.4, and should even work other operating systems.
+However...  For LibUSB to be able send commands to the USB device it needs exclusive access to the device. This requires the Linux usb-storage system, which makes the device available as disk to the end-user, to release the device. So effectively this means that you can't use the device as disk and use U3-tool at the same time.
+When building on Unix the 'u3-tool-usb' executable uses this subsystem.
 
 - spt
-The spt subsystem uses MS Windows SCSI pass through interface to communicate with the device. This is similar to the sg subsystem, with the difference that this is Windows specific. Als contrary to the sg subsystem, this works well!
+The spt subsystem uses Microsoft Windows SCSI pass through interface to communicate with the device. This is similar to the sg subsystem, with the difference that this is Windows specific.
+When building on Windows the 'u3-tool.exe' executable uses this subsystem.
+
+So what subsystem do you need to use? Simply said:
+ - Microsoft Windows     --> spt subsystem
+ - Linux >2.6.21?        --> sg subsystem
+ - Linux <=2.6.21?       --> LibUSB
+ - Other OS(BSD/Mac OS?) --> LibUSB, but hasn't been tested
 
 Compilation:
 ------------
 If you have downloaded the source:
- - enter the src/ directory
- - On Linux type 'make u3_tool_sg' if you want to use the 'sg' subsystem, 'make u3_tool' for the 'libusb' subsystem or 'make all' for both.
- - On Windows you need the mingw32 compiler. Type 'make -f Makefile.win' or open the u3_tool.dev file with Bloodshed's Dev-C++(http://www.bloodshed.net/devcpp.html).
+ - On Linux/Unix see INSTALL for instructions.
+ - On Windows you need the mingw32 compiler. Type 'make -f Makefile.win' in the src/ directory. Or open the u3_tool.dev file with Bloodshed's Dev-C++(http://www.bloodshed.net/devcpp.html).
 
