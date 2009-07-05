@@ -1,5 +1,5 @@
 /**
- * u3_tool - U3 USB stick manager
+ * u3-tool - U3 USB stick manager
  * Copyright (C) 2007 Daviedev, daviedev@users.sourceforge.net
  * 
  * This program is free software; you can redistribute it and/or modify

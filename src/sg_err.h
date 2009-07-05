@@ -1,7 +1,7 @@
 #ifndef SG_ERR_H
 #define SG_ERR_H
 
-/* Borrowed for the u3_tool project from: sg3_utils
+/* Borrowed for the u3-tool project from: sg3_utils
  * see (http://sg.torque.net/sg/)
  */
 

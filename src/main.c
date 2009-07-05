@@ -1,5 +1,5 @@
 /**
- * u3_tool - U3 USB stick manager
+ * u3-tool - U3 USB stick manager
  * Copyright (C) 2007 Daviedev, daviedev@users.sourceforge.net
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -562,7 +562,7 @@ int do_dump(u3_handle_t *device) {
 /************************************ Main ************************************/
 
 void usage(const char *name) {
-	printf("u3_tool %s\n", version);
+	printf("u3-tool %s\n", version);
 	printf("U3 USB stick manager\n");
 	printf("\n");
 	printf("Usage: %s [options] <device name>\n", name);
@@ -586,7 +586,7 @@ void usage(const char *name) {
 }
 
 void print_version() {
-	printf("u3_tool %s\n", version);
+	printf("u3-tool %s\n", version);
 	printf("\n");
 	printf("Copyright (C) 2007\n");
 	printf("This is free software; see the source for copying "

@@ -1,6 +1,6 @@
 [Project]
 FileName=u3_tool.dev
-Name=u3_tool
+Name=u3-tool
 UnitCount=14
 Type=1
 Ver=1
@@ -18,7 +18,7 @@ Icon=
 ExeOutput=
 ObjectOutput=
 OverrideOutput=0
-OverrideOutputName=u3_tool.exe
+OverrideOutputName=u3-tool.exe
 HostApplication=
 Folders=
 CommandLine=
@@ -32,7 +32,7 @@ CompilerSettings=0000000000000000000000
 [Unit1]
 FileName=display_progress.c
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
@@ -42,7 +42,7 @@ BuildCmd=
 [Unit2]
 FileName=display_progress.h
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
@@ -52,7 +52,7 @@ BuildCmd=
 [Unit3]
 FileName=main.c
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
@@ -62,7 +62,7 @@ BuildCmd=
 [Unit4]
 FileName=md5.c
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
@@ -72,7 +72,7 @@ BuildCmd=
 [Unit5]
 FileName=md5.h
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
@@ -82,7 +82,7 @@ BuildCmd=
 [Unit6]
 FileName=secure_input.c
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
@@ -92,7 +92,7 @@ BuildCmd=
 [Unit7]
 FileName=secure_input.h
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
@@ -102,7 +102,7 @@ BuildCmd=
 [Unit8]
 FileName=u3.h
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
@@ -112,7 +112,7 @@ BuildCmd=
 [Unit9]
 FileName=u3_commands.c
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
@@ -122,7 +122,7 @@ BuildCmd=
 [Unit10]
 FileName=u3_commands.h
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
@@ -132,7 +132,7 @@ BuildCmd=
 [Unit11]
 FileName=u3_error.c
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
@@ -142,7 +142,7 @@ BuildCmd=
 [Unit12]
 FileName=u3_error.h
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
@@ -152,7 +152,7 @@ BuildCmd=
 [Unit13]
 FileName=u3_scsi.h
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
@@ -162,7 +162,7 @@ BuildCmd=
 [Unit14]
 FileName=u3_scsi_spt.c
 CompileCpp=1
-Folder=u3_tool
+Folder=u3-tool
 Compile=1
 Link=1
 Priority=1000
