@@ -1,6 +1,6 @@
 /**
  * u3-tool - U3 USB stick manager
- * Copyright (C) 2007 Daviedev, daviedev@users.sourceforge.net
+ * Copyright (C) 2009 Daviedev, daviedev@users.sourceforge.net
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,6 +16,10 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */ 
+#if HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,7 +42,7 @@
 #define MAX_FILENAME_STRING_LENGTH 1024
 #define MAX_PASSWORD_LENGTH 1024
 
-char *version = "0.2";
+char *version = VERSION;
 
 int debug = 0;
 int batch_mode = 0;
@@ -562,8 +566,7 @@ int do_dump(u3_handle_t *device) {
 /************************************ Main ************************************/
 
 void usage(const char *name) {
-	printf("u3-tool %s\n", version);
-	printf("U3 USB stick manager\n");
+	printf("u3-tool %s - U3 USB stick manager\n", version);
 	printf("\n");
 	printf("Usage: %s [options] <device name>\n", name);
 	printf("\n");
@@ -573,7 +576,7 @@ void usage(const char *name) {
 	printf("\t-D                Dump all raw info(for debug)\n");
 	printf("\t-e                Enable device security\n");
 	printf("\t-h                Print this help message\n");
-//TODO:	printf("\t-i                Display device info\n");
+	printf("\t-i                Display device info\n");
 	printf("\t-l <cd image>     Load CD image into device\n");
 	printf("\t-p <cd size>      Repartition device\n");
 	printf("\t-u                Unlock device\n");
@@ -588,9 +591,9 @@ void usage(const char *name) {
 void print_version() {
 	printf("u3-tool %s\n", version);
 	printf("\n");
-	printf("Copyright (C) 2007\n");
+	printf("Copyright (C) 2009\n");
 	printf("This is free software; see the source for copying "
-		"conditions. There is NO\n warranty; not even for "
+		"conditions. There is NO\nwarranty; not even for "
 		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");
 }
 
