@@ -1,4 +1,5 @@
 Major:
+ - if possible open sg subsystem Read-only to work around NOMEDIUM error with encrypted partition
  - Wipe all password/hash buffers after usage
  - Documentation
  - Further documentation of U3 features
