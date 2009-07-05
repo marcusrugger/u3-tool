@@ -1,5 +1,6 @@
 
 0.2:
+ - Renamed executables(u3_tool -> u3-tool)
  - Added Info command
  - Don't ask password for disable security
  - Print size's in human readable format
@@ -7,6 +8,7 @@
  - Warn if user is about to block device
  - Handle blocked device better
  - Make sg subsystem the default
+ - Change build system to autoconf/automake
 
 0.1:
  - Initial version
