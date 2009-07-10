@@ -1,3 +1,5 @@
+0.3:
+ - Fixed building with dev-cpp, and include Windows sources in dist
 
 0.2:
  - Renamed executables(u3_tool -> u3-tool)

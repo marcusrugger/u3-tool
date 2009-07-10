@@ -13,3 +13,5 @@ u3_tool_usb_SOURCES = $(shared_source) u3_scsi_usb.c
 u3_tool_usb_CFLAGS = $(LIBUSB_CFLAGS)
 u3_tool_usb_LDADD = $(LIBUSB_LIBS)
 endif
+
+EXTRA_DIST = u3_tool.dev u3_scsi_spt.c

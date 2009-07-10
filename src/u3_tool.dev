@@ -10,14 +10,14 @@ Libs=
 PrivateResource=
 ResourceIncludes=
 MakeIncludes=
-Compiler=
-CppCompiler=
+Compiler=-DVERSION="0.3"_@@_
+CppCompiler=-DVERSION="\"0.3\""_@@_
 Linker=
 IsCpp=1
 Icon=
 ExeOutput=
 ObjectOutput=
-OverrideOutput=0
+OverrideOutput=1
 OverrideOutputName=u3-tool.exe
 HostApplication=
 Folders=
