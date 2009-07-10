@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(u3-tool, 0.2, daviedev@users.sourceforge.net)
+AC_INIT(u3-tool, 0.3, daviedev@users.sourceforge.net)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADER([config.h])
