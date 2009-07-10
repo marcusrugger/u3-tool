@@ -461,8 +461,11 @@ int u3_enable_security(u3_handle_t *device, const char *password) {
 	if (u3_send_cmd(device, cmd, U3_DATA_TO_DEV, sizeof(data),
 		(uint8_t *) &data, &status) != U3_SUCCESS)
 	{
+		memset(&data, 0, sizeof(data));
 		return U3_FAILURE;
 	}
+
+	memset(&data, 0, sizeof(data));
 
 	if (status != 0) {
 		u3_set_error(device, "Device reported command failed: status %d", status);
@@ -488,12 +491,15 @@ int u3_disable_security(u3_handle_t *device, const char *password,
 	if (u3_send_cmd(device, cmd, U3_DATA_TO_DEV, sizeof(passhash_buf),
 		passhash_buf, &status) != U3_SUCCESS)
 	{
+		memset(passhash_buf, 0, sizeof(passhash_buf));
 		return U3_FAILURE;
 	}
 
 	if (status == 0) {
 		*result = 1;
 	}
+
+	memset(passhash_buf, 0, sizeof(passhash_buf));
 
 	return U3_SUCCESS;
 }
@@ -512,12 +518,15 @@ int u3_unlock(u3_handle_t *device, const char *password, int *result) {
 	if (u3_send_cmd(device, cmd, U3_DATA_TO_DEV, sizeof(passhash_buf),
 		passhash_buf, &status) != U3_SUCCESS)
 	{
+		memset(passhash_buf, 0, sizeof(passhash_buf));
 		return U3_FAILURE;
 	}
 
 	if (status == 0) {
 		*result = 1;
 	}
+
+	memset(passhash_buf, 0, sizeof(passhash_buf));
 
 	return U3_SUCCESS;
 }
@@ -539,12 +548,15 @@ int u3_change_password(u3_handle_t *device, const char *old_password,
 	if (u3_send_cmd(device, cmd, U3_DATA_TO_DEV, sizeof(passhash_buf),
 		(uint8_t *) passhash_buf, &status) != U3_SUCCESS)
 	{
+		memset(passhash_buf, 0, sizeof(passhash_buf));
 		return U3_FAILURE;
 	}
 
 	if (status == 0) {
 		*result = 1;
 	}
+
+	memset(passhash_buf, 0, sizeof(passhash_buf));
 
 	return U3_SUCCESS;
 }

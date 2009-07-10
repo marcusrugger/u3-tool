@@ -672,7 +672,18 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	device_name = argv[optind];
-		
+
+	//
+	// open the device
+	// 
+	if (u3_open(&device, device_name)) {
+		fprintf(stderr, "Error opening device: %s\n", u3_error_msg(&device));
+		exit(EXIT_FAILURE);
+	}
+
+	//
+	// ask passwords
+	//
 	if ((action == unlock || action == change_password)
 	     && ask_password)
 	{
@@ -708,15 +719,9 @@ int main(int argc, char *argv[]) {
 			} else {
 				fprintf(stderr, "Passwords don't match\n");
 			}
+			
+			memset(validate_password, 0, sizeof(validate_password));
 		} while (!proceed);
-	}
-
-	//
-	// open the device
-	// 
-	if (u3_open(&device, device_name)) {
-		fprintf(stderr, "Error opening device: %s\n", u3_error_msg(&device));
-		exit(EXIT_FAILURE);
 	}
 
 	//
@@ -767,6 +772,8 @@ int main(int argc, char *argv[]) {
 	//
 	// clean up
 	//
+	memset(password, 0, sizeof(password));
+	memset(new_password, 0, sizeof(new_password));
 	u3_close(&device);
 
 	return retval;
