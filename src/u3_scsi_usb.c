@@ -47,10 +47,12 @@
 
 #define U3_DEVICE_TIMEOUT 20000	//2000 millisecs == 2 seconds 
 
-#define U3_DEV_LIST_LENGTH 2
+#define U3_DEV_LIST_LENGTH 4
 uint16_t u3_dev_list[U3_DEV_LIST_LENGTH][2] = {
-	{ 0x08ec, 0x0020 },
-	{ 0x0781, 0x5406 },
+	{ 0x08ec, 0x0020 }, // Verbatim Store 'N Go
+	{ 0x0781, 0x5406 }, // Sandisk Cruzer Micro
+	{ 0x0781, 0x5508 }, // Sandisk Cruzer Titanium
+	{ 0x0781, 0x550a }, // Sandisk Cruzer Pattern
 };
 
 struct u3_usb_handle {
