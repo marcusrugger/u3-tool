@@ -48,7 +48,7 @@ int debug = 0;
 int batch_mode = 0;
 
 enum action_t { unknown, load, partition, dump, info, unlock, change_password,
-		enable_security, disable_security };
+		enable_security, disable_security, reset_security };
 
 /********************************** Helpers ***********************************/
 
@@ -345,7 +345,42 @@ int do_enable_security(u3_handle_t *device, char *password) {
 	return EXIT_SUCCESS;
 }
 
-int do_disable_security(u3_handle_t *device) {
+int do_disable_security(u3_handle_t *device, char *password) {
+	int result=0;
+	int tries_left=0;
+
+	// check password retry counter
+	if (get_tries_left(device, &tries_left) != U3_SUCCESS) {
+		return EXIT_FAILURE;
+	}
+
+	if (tries_left == 0) {
+		printf("Unable to disable security, device is blocked\n");
+		return EXIT_FAILURE;
+	} else if (tries_left == 1) {
+		printf("Warning: This is the your last password try. If this attempt fails,");
+		printf(" all data on the data partition is lost.\n");
+		if (!confirm())
+			return EXIT_FAILURE;
+	}
+
+	// disable security
+	if (u3_disable_security(device, password, &result) != U3_SUCCESS) {
+		fprintf(stderr, "u3_disable_security() failed: %s\n",
+			u3_error_msg(device));
+		return EXIT_FAILURE;
+	}
+
+	if (result) {
+		printf("OK\n");
+		return EXIT_SUCCESS;
+	} else {
+		printf("Password incorrect\n");
+		return EXIT_FAILURE;
+	}
+}
+
+int do_reset_security(u3_handle_t *device) {
 	int result=0;
 
 	// the enable security command is always possible without the correct
@@ -368,7 +403,7 @@ int do_disable_security(u3_handle_t *device) {
 		printf("OK\n");
 		return EXIT_SUCCESS;
 	} else {
-		printf("Password incorrect\n");
+		printf("Failed\n");
 		return EXIT_FAILURE;
 	}
 }
@@ -579,6 +614,7 @@ void usage(const char *name) {
 	printf("\t-i                Display device info\n");
 	printf("\t-l <cd image>     Load CD image into device\n");
 	printf("\t-p <cd size>      Repartition device\n");
+	printf("\t-R                Reset device security, destroying private data\n");
 	printf("\t-u                Unlock device\n");
 	printf("\t-v                Use verbose output\n");
 	printf("\t-V                Print version information\n");
@@ -618,7 +654,7 @@ int main(int argc, char *argv[]) {
 	//
 	// parse options
 	//
-	while ((c = getopt(argc, argv, "cdDehil:p:uvVz")) != -1) {
+	while ((c = getopt(argc, argv, "cdDehil:p:RuvVz")) != -1) {
 		switch (c) {
 			case 'c':
 				action = change_password;
@@ -641,6 +677,9 @@ int main(int argc, char *argv[]) {
 				action = partition;
 				strncpy(size_string, optarg, MAX_SIZE_STRING_LENGTH);
 				size_string[MAX_SIZE_STRING_LENGTH] = '\0';
+				break;
+			case 'R':
+				action = reset_security;
 				break;
 			case 'u':
 				action = unlock;
@@ -684,7 +723,7 @@ int main(int argc, char *argv[]) {
 	//
 	// ask passwords
 	//
-	if ((action == unlock || action == change_password)
+	if ((action == unlock || action == change_password || action == disable_security)
 	     && ask_password)
 	{
 		int proceed = 0;
@@ -759,10 +798,13 @@ int main(int argc, char *argv[]) {
 				retval = do_enable_security(&device, new_password);
 			break;
 		case disable_security:
+			retval = do_disable_security(&device, password);
+			break;
+		case reset_security:
 			printf("WARNING: This will delete all data on the data ");
 			printf("partition\n");
 			if (confirm())
-				retval = do_disable_security(&device);
+				retval = do_reset_security(&device);
 			break;
 		default:
 			fprintf(stderr, "No action specified, use '-h' option for help.\n");
