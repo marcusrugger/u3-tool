@@ -1,4 +1,4 @@
-bin_PROGRAMS = u3-tool
+sbin_PROGRAMS = u3-tool
 
 shared_source = display_progress.c display_progress.h main.c md5.c md5.h \
 	secure_input.c secure_input.h u3_commands.c u3_commands.h u3_error.c \
@@ -7,7 +7,7 @@ shared_source = display_progress.c display_progress.h main.c md5.c md5.h \
 u3_tool_SOURCES = $(shared_source) u3_scsi_sg.c sg_err.h
 
 if HAVE_LIBUSB
-bin_PROGRAMS += u3-tool-usb
+sbin_PROGRAMS += u3-tool-usb
 
 u3_tool_usb_SOURCES = $(shared_source) u3_scsi_usb.c
 u3_tool_usb_CFLAGS = $(LIBUSB_CFLAGS)
