@@ -19,7 +19,9 @@
 #include "secure_input.h"
 #include <stdio.h>
 #include <unistd.h>
-#ifndef WIN32
+#ifdef WIN32
+# include <windows.h>
+#else
 # include <termios.h>
 # include <sys/ioctl.h>
 #endif
@@ -27,14 +29,28 @@
 void
 secure_input(char *buf, size_t buf_size)
 {
-#ifndef WIN32
+#ifdef WIN32
+	DWORD mode;
+	HANDLE ih;
+#else
 	struct termio ttymode;
 #endif
 	int pos;
 	int ch;
 
-#ifndef WIN32
+	// input checking
+	if (buf_size < 1) return;
+	buf[0] = '\n';
+
 	// hide input
+#ifdef WIN32
+	ih = GetStdHandle(STD_INPUT_HANDLE);
+	if (!GetConsoleMode(ih, &mode)) {
+		fprintf(stderr, "Failed to obtain handle to console\n");
+		return;
+	}
+	SetConsoleMode(ih, mode & ~(ENABLE_ECHO_INPUT ));
+#else
 	ioctl(STDIN_FILENO, TCGETA, &ttymode);
 	ttymode.c_lflag &= ~( ECHO | ECHOE | ECHONL );
 	ioctl(STDIN_FILENO, TCSETAF, &ttymode);
@@ -53,8 +69,11 @@ secure_input(char *buf, size_t buf_size)
 	while (ch != '\n' && ch != EOF)
 		ch = fgetc(stdin);
 
-#ifndef WIN32
 	// unhide input
+#ifdef WIN32
+	SetConsoleMode(ih, mode);
+	fputc('\n', stdout);
+#else
 	ttymode.c_lflag |= ECHO | ECHOE | ECHONL;
 	ioctl(STDIN_FILENO, TCSETAF, &ttymode);
 	fputc('\n', stdout);
