@@ -1,6 +1,5 @@
 Major:
  - if possible open sg subsystem Read-only to work around NOMEDIUM error with encrypted partition
- - Secure input for Windows
  - Handle ctrl-c
  - Documentation
  - Further documentation of U3 features
