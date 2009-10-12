@@ -51,7 +51,7 @@
 uint16_t u3_dev_list[U3_DEV_LIST_LENGTH][2] = {
 	{ 0x08ec, 0x0020 }, // Verbatim Store 'N Go
 	{ 0x0781, 0x5406 }, // Sandisk Cruzer Micro
-	{ 0x0781, 0x5508 }, // Sandisk Cruzer Titanium
+	{ 0x0781, 0x5408 }, // Sandisk Cruzer Titanium
 	{ 0x0781, 0x550a }, // Sandisk Cruzer Pattern
 };
 
