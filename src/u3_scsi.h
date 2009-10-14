@@ -29,6 +29,9 @@
 
 #define U3_CMD_LEN		12
 
+extern const char *u3_subsystem_name;
+extern const char *u3_subsystem_help;
+
 /**
  * Open U3 device
  *

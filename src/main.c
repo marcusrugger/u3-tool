@@ -619,13 +619,12 @@ void usage(const char *name) {
 	printf("\t-v                Use verbose output\n");
 	printf("\t-V                Print version information\n");
 	printf("\n");
-	printf("The device name depends on the used subsystem.\n");
-	printf("Examples: '/dev/sda0'(sg), 'scan'(USB),'vid:pid'(USB), "
-			"'e'(Windows)\n");
+	printf("For the device name use:\n  %s\n", u3_subsystem_help);
 }
 
 void print_version() {
 	printf("u3-tool %s\n", version);
+	printf("subsystem: %s\n", u3_subsystem_name);
 	printf("\n");
 	printf("Copyright (C) 2009\n");
 	printf("This is free software; see the source for copying "

@@ -16,6 +16,11 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */ 
+#if HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef SUBSYS_LIBUSB
 #include "u3_scsi.h"
 #include "u3_error.h"
 
@@ -80,6 +85,8 @@ struct usb_msc_csw {
 	uint8_t bCSWStatus;
 } __attribute__ ((packed));
 
+const char *u3_subsystem_name = "libusb";
+const char *u3_subsystem_help = "'scan' to automatically use the first detected U3 device, or 'vid:pid' if not detected";
 
 struct usb_device *
 locate_u3_device(uint16_t vid, uint16_t pid)
@@ -352,3 +359,4 @@ int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
 	return U3_SUCCESS;
 }
 
+#endif //SUBSYS_LIBUSB

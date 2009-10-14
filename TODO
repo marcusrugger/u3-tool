@@ -1,14 +1,15 @@
 Major:
- - if possible open sg subsystem Read-only to work around NOMEDIUM error with encrypted partition
+ - If possible open sg subsystem Read-only to work around NOMEDIUM error with encrypted partition
  - Handle ctrl-c
  - Documentation
  - Further documentation of U3 features
- - Disable Cursor on progress bar
- - document which options are destructive
- - display info if no options provided
+ - Document which options are destructive
  - Don't allow enable security if security already enabled
  - Don't allow disable security if device locked/not secured.
  - [SG] retry on busy error
+ - MacOS X support
 
 minor:
  - ETA when loading new CD image
+ - Disable Cursor on progress bar
+ - Display info if no options provided

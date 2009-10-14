@@ -1,5 +1,11 @@
 0.3:
- - Fixed building with dev-cpp, and include Windows sources in dist
+ - Detect correct subsystem from configure.
+ - Use MinGW/MSYS to build on MS Windows
+ - Hide password input under MS Windows
+ - Install into sbin instead of bin
+ - Added "reset security" command
+ - Added new devices to PID/VID list of libusb subsystem
+ - Fixed displaying of disk sizes > 4 GB
 
 0.2:
  - Renamed executables(u3_tool -> u3-tool)

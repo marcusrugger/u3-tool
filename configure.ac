@@ -6,19 +6,42 @@ AC_INIT(u3-tool, 0.3, daviedev@users.sourceforge.net)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADER([config.h])
+AC_CANONICAL_HOST
 
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
 
+# Parse arguments
+AC_ARG_ENABLE([libusb],
+     [  --enable-libusb    Force using libUSB subsystem instead of platform specific],
+     [case "${enableval}" in
+       yes) force_libusb=true ;;
+       no)  force_libusb=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-libusb]) ;;
+     esac],[force_libusb=false])
+
+# Determine subsystem
+AS_IF([test x$force_libusb = xtrue],
+	[ subsystem=libusb ],
+	[ AS_CASE([$host_os],
+		[linux*], [subsystem=sg],
+		[mingw32], [subsystem=spt],
+		[subsystem=libusb])]
+	)
+
+AS_IF([test x$subsystem = xlibusb ], [ AC_DEFINE([SUBSYS_LIBUSB], [1], [Use libusb subsystem]) ])
+AS_IF([test x$subsystem = xsg ], [ AC_DEFINE([SUBSYS_SG], [1], [Use sg subsystem]) ])
+AS_IF([test x$subsystem = xspt ], [ AC_DEFINE([SUBSYS_SPT], [1], [Use spt subsystem]) ])
+
 # Checks for libraries.
-PKG_CHECK_MODULES([LIBUSB], [libusb],
-	[ 
-		LIBUSB_MSG=yes
-	],
-	[ LIBUSB_MSG=no ])
-AM_CONDITIONAL(HAVE_LIBUSB, [test x$LIBUSB_MSG = xyes])
+#FIXME: PKG_CHECK_MODULES not provided on MinGW
+#AS_IF([ test x$subsystem = xlibusb ],
+#	[ PKG_CHECK_MODULES([LIBUSB], [libusb],
+#		[  ],
+#		[ AC_MSG_FAILURE([libusb is required but not found.]) ])
+#	])
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -45,6 +68,5 @@ AC_CONFIG_FILES([Makefile
 AC_OUTPUT
 
 echo ""
-echo "Options:"
-echo "LibUSB used:     ${LIBUSB_MSG}"
+echo "Subsystem:     ${subsystem}"
 echo ""

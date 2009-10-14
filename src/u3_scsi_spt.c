@@ -16,6 +16,11 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */ 
+#if HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef SUBSYS_SPT
 #include "u3_scsi.h"
 #include "u3_error.h"
 
@@ -32,6 +37,9 @@
 #include <ddk/ntddscsi.h>
 
 #define U3_TIMEOUT 2	// 2 seconds 
+
+const char *u3_subsystem_name = "spt";
+const char *u3_subsystem_help = "The drive letter of the device";
 
 int u3_open(u3_handle_t *device, const char *which) 
 {
@@ -131,4 +139,4 @@ int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
 	return U3_SUCCESS;
 }
 
-
+#endif // SUBSYS_SPT
