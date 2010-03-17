@@ -38,7 +38,7 @@
 
 #include "sg_err.h"
 
-#define U3_TIMEOUT 2000	//2000 millisecs == 2 seconds 
+#define SG_TIMEOUT 2000	//2000 millisecs == 2 seconds 
 
 const char *u3_subsystem_name = "sg";
 const char *u3_subsystem_help = "'/dev/sda0', '/dev/sg3'";
@@ -97,6 +97,7 @@ void u3_close(u3_handle_t *device)
 {
 	int *sg_fd = (int *)device->dev;
 	close(*sg_fd);
+	free(*sg_fd);
 }
 
 int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
@@ -126,12 +127,12 @@ int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
 	io_hdr.cmd_len = U3_CMD_LEN;			// length of command in bytes
 	// io_hdr.iovec_count = 0;   			// don't use iovector stuff
 	io_hdr.mx_sb_len = sizeof(sense_buf);		// sense buffer size. do we use this???
-	io_hdr.dxfer_direction = dxfer_direction;	// send data to device
+	io_hdr.dxfer_direction = dxfer_direction;	// Select data direction
 	io_hdr.dxfer_len = dxfer_length;		// Size of data transfered
 	io_hdr.dxferp = dxfer_data;			// Data buffer to transfer
 	io_hdr.cmdp = cmd;				// Command buffer to execute
 	io_hdr.sbp = sense_buf;				// Sense buffer
-	io_hdr.timeout = U3_TIMEOUT;			// timeout
+	io_hdr.timeout = SG_TIMEOUT;			// timeout
 	// io_hdr.flags = 0;	 			// take defaults: indirect IO, etc 
 	// io_hdr.pack_id = 0;				// internal packet. used by te program to recognize packets
 	// io_hdr.usr_ptr = NULL;			// user data
