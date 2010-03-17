@@ -36,7 +36,7 @@
 #include <windows.h>
 #include <ddk/ntddscsi.h>
 
-#define U3_TIMEOUT 2	// 2 seconds 
+#define SPT_TIMEOUT 2	// 2 seconds 
 
 const char *u3_subsystem_name = "spt";
 const char *u3_subsystem_help = "The drive letter of the device";
@@ -58,11 +58,11 @@ int u3_open(u3_handle_t *device, const char *which)
         return U3_FAILURE;
     }
 
-    //take the drive letter and put it in the format used in CreateFile
+    // Take the drive letter and put it in the format used in CreateFile
     memcpy(lpszDeviceName, (char *) "\\\\.\\*:", 7);
     lpszDeviceName[4] = which[0];
 
-    //get a handle to the device, the parameters used here must be used in order for this to work
+    // Get a handle to the device, the parameters used here must be used in order for this to work
     hDevice=CreateFile(lpszDeviceName,
 						GENERIC_READ|GENERIC_WRITE,
 						FILE_SHARE_READ|FILE_SHARE_WRITE,
@@ -71,7 +71,8 @@ int u3_open(u3_handle_t *device, const char *which)
 						FILE_ATTRIBUTE_NORMAL,
 						NULL);
 
-    //if for some reason we couldn't get a handle to the device we will try again using slightly different parameters for CreateFile
+    // If for some reason we couldn't get a handle to the device we will try again using slightly
+    // different parameters for CreateFile
     if (hDevice==INVALID_HANDLE_VALUE)
     {
 		u3_set_error(device, "Failed openning handle for %s: Error %d\n", which, GetLastError());
@@ -118,19 +119,40 @@ int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
     sptd.SenseInfoLength    = 0;								// don't use this currently...
     sptd.DataIn             = dxfer_direction;					// data direction
     sptd.DataTransferLength = dxfer_length;					// Size of data transfered
-    sptd.TimeOutValue       = U3_TIMEOUT;						// timeout in seconds
+    sptd.TimeOutValue       = SPT_TIMEOUT;						// timeout in seconds
     sptd.DataBuffer         = dxfer_data;						// data buffer
     //sptd.SenseInfoOffset    = offsetof(SCSI_PASS_THROUGH_WITH_BUFFERS, sbuf);
     memcpy(sptd.Cdb, cmd, U3_CMD_LEN);
 
 	// preform ioctl on device
-    err = DeviceIoControl(hDevice, IOCTL_SCSI_PASS_THROUGH_DIRECT, &sptd,
-						sizeof(sptd), &sptd, sizeof(sptd), &returned, NULL);
+	err = DeviceIoControl(hDevice, IOCTL_SCSI_PASS_THROUGH_DIRECT, &sptd,
+				sizeof(sptd), &sptd, sizeof(sptd), &returned, NULL);
 
 	// evaluate result
 	if (!err) {
-		u3_set_error(device, "Failed executing scsi command: "
-			"Error %d", GetLastError());
+		DWORD errcode;
+		LPVOID lpMsgBuf;
+
+		errcode = GetLastError();
+
+		err = FormatMessage(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL,
+			errcode,
+			0,
+			(LPTSTR) &lpMsgBuf,
+			0,
+			NULL);
+
+		if (err != 0) {
+			u3_set_error(device, "Failed executing scsi command: "
+				"%s (Error %d)", lpMsgBuf, errcode);
+			LocalFree(lpMsgBuf);
+		} else {
+			u3_set_error(device, "Failed executing scsi command: "
+				"Unknown Error %d", errcode);
+		}
+
 		return U3_FAILURE;
 	}
 
