@@ -97,7 +97,7 @@ void u3_close(u3_handle_t *device)
 {
 	int *sg_fd = (int *)device->dev;
 	close(*sg_fd);
-	free(*sg_fd);
+	free(sg_fd);
 }
 
 int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
