@@ -1,6 +1,6 @@
 /**
  * u3-tool - U3 USB stick manager
- * Copyright (C) 2007 Daviedev, daviedev@users.sourceforge.net
+ * Copyright (C) 2011 Daviedev, daviedev@users.sourceforge.net
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -115,6 +115,7 @@ int u3_open(u3_handle_t *device, const char *which)
 {
 	uint16_t vid, pid;
 	regex_t vid_pid_regex;
+	int has_vid_pid = 0;
 
         struct usb_device *u3_device;
 	u3_usb_handle_t *handle_wrapper;
@@ -137,17 +138,29 @@ int u3_open(u3_handle_t *device, const char *which)
 				"expression: %s", errbuf);
 		return U3_FAILURE;
 	}
+	if (regexec(&vid_pid_regex, which, 0, 0, 0) == 0) {
+		// Do de regexing here, this prevents leaking of the
+		// vid_pid_regex memory
+		char *seperator=0;
+		has_vid_pid = 1;
+		vid = strtoul(which, &seperator, 16);
+		pid = strtoul(seperator+1, &seperator, 16);
+	}
+	regfree(&vid_pid_regex);
 
 	usb_init();
 	if (debug)
 		usb_set_debug(255);
 
 	// Find device
-	if (regexec(&vid_pid_regex, which, 0, 0, 0) == 0) {
-		char *seperator=0;
-		vid = strtoul(which, &seperator, 16);
-		pid = strtoul(seperator+1, &seperator, 16);
+	if (has_vid_pid) {
 		u3_device = locate_u3_device(vid, pid);
+
+		if (u3_device == NULL) {
+			u3_set_error(device, "Could not locate the U3 device '%s', "
+					"try 'scan' for first available device", which);
+			return U3_FAILURE;
+		}
 	} else if (strcmp(which, "scan") == 0) {
 		i = 0;
 		u3_device = NULL;
@@ -156,19 +169,17 @@ int u3_open(u3_handle_t *device, const char *which)
 						u3_dev_list[i][1]);
 			i++;
 		}
+
+		if (u3_device == NULL) {
+			u3_set_error(device, "Could not locate any known U3 device, "
+					"the VID:PID of your device might not be known to U3 tool");
+			return U3_FAILURE;
+		}
 //	} else if (regexec(&serial_regex, which, 0, 0, 0) == 0) {
 //TODO: search for a specific serial number
 	} else {
 		u3_set_error(device, "Unknown device name '%s', try 'scan' "
 			"for first available device", which);
-		return U3_FAILURE;
-	}
-
-	regfree(&vid_pid_regex);
-
-	if (u3_device == NULL) {
-		u3_set_error(device, "Could not locate the U3 device '%s', "
-				"try 'scan' for first available device", which);
 		return U3_FAILURE;
 	}
 
