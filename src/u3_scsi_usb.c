@@ -57,6 +57,7 @@ uint16_t u3_dev_list[][2] = {
 	{ 0x0781, 0x5406 }, // Sandisk Cruzer Micro
 	{ 0x0781, 0x5408 }, // Sandisk Cruzer Titanium
 	{ 0x0781, 0x550a }, // Sandisk Cruzer Pattern
+	{ 0x0781, 0x5151 }, // Sandisk Cruzer Micro Skin 8GB (Thanks to dnelson @sf)
 	{ 0, 0 },
 };
 
