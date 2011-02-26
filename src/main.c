@@ -101,7 +101,7 @@ char factor_symbols[] = "kMGTPE";
  * @param size	Data size to print
  */
 void print_human_size(uint64_t size) {
-	float fsize = 0;
+	double fsize = 0;
 	unsigned int factor = 0;
 	
 	fsize = size;
