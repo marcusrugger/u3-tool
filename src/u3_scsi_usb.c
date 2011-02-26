@@ -52,12 +52,12 @@
 
 #define U3_DEVICE_TIMEOUT 20000	//2000 millisecs == 2 seconds 
 
-#define U3_DEV_LIST_LENGTH 4
-uint16_t u3_dev_list[U3_DEV_LIST_LENGTH][2] = {
+uint16_t u3_dev_list[][2] = {
 	{ 0x08ec, 0x0020 }, // Verbatim Store 'N Go
 	{ 0x0781, 0x5406 }, // Sandisk Cruzer Micro
 	{ 0x0781, 0x5408 }, // Sandisk Cruzer Titanium
 	{ 0x0781, 0x550a }, // Sandisk Cruzer Pattern
+	{ 0, 0 },
 };
 
 struct u3_usb_handle {
@@ -164,7 +164,9 @@ int u3_open(u3_handle_t *device, const char *which)
 	} else if (strcmp(which, "scan") == 0) {
 		i = 0;
 		u3_device = NULL;
-		while (u3_device == NULL && i < U3_DEV_LIST_LENGTH) {
+		while (u3_device == NULL &&
+		       !(u3_dev_list[i][0] == 0 && u3_dev_list[i][1] == 0))
+		{
 			u3_device = locate_u3_device(u3_dev_list[i][0],
 						u3_dev_list[i][1]);
 			i++;
