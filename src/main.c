@@ -93,7 +93,7 @@ int confirm() {
 /**
  * Symbols of size multiplication factors.
  */
-char factor_symbols[] = "kMGTPE";
+char factor_symbols[] = " kMGTPE";
 
 /**
  * Print bytes is human readable fashion.
@@ -110,7 +110,7 @@ void print_human_size(uint64_t size) {
 		factor++;
 	}
 
-	printf("%.2f %cB", fsize, factor_symbols[factor-1]);
+	printf("%.2f %cB", fsize, factor_symbols[factor]);
 }
 
 /**
