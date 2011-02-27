@@ -154,7 +154,7 @@ int get_tries_left(u3_handle_t *device, int *tries) {
 int do_load(u3_handle_t *device, char *iso_filename) {
 	struct stat file_stat;
 	struct part_info pinfo;
-	uint32_t cd_size;
+	off_t cd_size;
 	FILE *fp;
 	uint8_t	buffer[U3_BLOCK_SIZE];
 	unsigned int bytes_read=0;
@@ -171,10 +171,10 @@ int do_load(u3_handle_t *device, char *iso_filename) {
 		return EXIT_FAILURE;
 	}
 
-	cd_size = file_stat.st_size / U3_SECTOR_SIZE;
+	cd_size = ((uintmax_t) file_stat.st_size) / U3_SECTOR_SIZE;
 	if (file_stat.st_size % U3_SECTOR_SIZE)
 		cd_size++;
-	block_cnt = file_stat.st_size / U3_BLOCK_SIZE;
+	block_cnt = ((uintmax_t) file_stat.st_size) / U3_BLOCK_SIZE;
 	if (file_stat.st_size % U3_BLOCK_SIZE)
 		block_cnt++;
 
@@ -186,10 +186,10 @@ int do_load(u3_handle_t *device, char *iso_filename) {
 	}
 
 	if (cd_size > pinfo.cd_size) {
-		fprintf(stderr, "CD image(%lu byte) is to big for current cd "
-			"partition(%u byte), please repartition device.\n",
-			file_stat.st_size,
-			U3_SECTOR_SIZE * pinfo.cd_size);
+		fprintf(stderr, "CD image(%ju byte) is to big for current cd "
+			"partition(%llu byte), please repartition device.\n",
+			(uintmax_t) file_stat.st_size,
+			1ll * U3_SECTOR_SIZE * pinfo.cd_size);
 		return EXIT_FAILURE;
 	}
 
