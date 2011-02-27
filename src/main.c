@@ -105,7 +105,7 @@ void print_human_size(uint64_t size) {
 	unsigned int factor = 0;
 	
 	fsize = size;
-	while (fsize > 1024) {
+	while (fsize >= 1024) {
 		fsize /= 1024;
 		factor++;
 	}
