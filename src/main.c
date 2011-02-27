@@ -772,9 +772,9 @@ int main(int argc, char *argv[]) {
 		case partition:
 			printf("\n");
 			printf("WARNING: Loading a new cd image causes the ");
-			printf("whole device to be whiped. This INCLUDES\n ");
+			printf("whole device to be wiped. This INCLUDES\n ");
 			printf("the data partition.\n");
-			printf("I repeat: ANY EXCISTING DATA WILL BE LOST!\n");
+			printf("I repeat: ANY EXISTING DATA WILL BE LOST!\n");
 			if (confirm())
 				retval = do_partition(&device, size_string);
 			break;
