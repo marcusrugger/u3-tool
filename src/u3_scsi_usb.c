@@ -58,6 +58,9 @@ uint16_t u3_dev_list[][2] = {
 	{ 0x0781, 0x5408 }, // Sandisk Cruzer Titanium
 	{ 0x0781, 0x550a }, // Sandisk Cruzer Pattern
 	{ 0x0781, 0x5151 }, // Sandisk Cruzer Micro Skin 8GB (Thanks to dnelson @sf)
+	{ 0x0781, 0x540e }, // Sandisk Cruzer Contour
+	{ 0x0781, 0x5530 }, // Sandisk Cruzer
+	{ 0x0781, 0x5535 }, // Sandisk Ultra Backup
 	{ 0, 0 },
 };
 
