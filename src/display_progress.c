@@ -20,16 +20,18 @@
 #include <stdio.h>
 
 void display_progress(unsigned int cur, unsigned int total) {
-        unsigned int procent;
+	static unsigned int last = 0;
+	unsigned int percent;
 	unsigned int bar_len, i;
 
 	if (total == 0) return;
 
-	procent = (cur * 100) / total;
+	percent = (cur * 100) / total;
+	if (percent == last) return;
 
 	putchar('|');
 	bar_len = (cur * PROGRESS_BAR_WIDTH) / total;
-	for (i =0; i < bar_len; i++) {
+	for (i = 0; i < bar_len; i++) {
 		putchar('*');
 	}
 	for (i = bar_len; i < PROGRESS_BAR_WIDTH; i++) {
@@ -37,6 +39,8 @@ void display_progress(unsigned int cur, unsigned int total) {
 	}
 	putchar('|');
 
-	printf(" %d%%\r", procent);
+	printf(" %d%%\r", percent);
 	fflush(stdout);
+
+	last = percent;
 }
