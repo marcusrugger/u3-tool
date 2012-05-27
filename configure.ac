@@ -37,11 +37,11 @@ AS_IF([test x$subsystem = xspt ], [ AC_DEFINE([SUBSYS_SPT], [1], [Use spt subsys
 
 # Checks for libraries.
 #FIXME: PKG_CHECK_MODULES not provided on MinGW
-#AS_IF([ test x$subsystem = xlibusb ],
-#	[ PKG_CHECK_MODULES([LIBUSB], [libusb],
-#		[  ],
-#		[ AC_MSG_FAILURE([libusb is required but not found.]) ])
-#	])
+AS_IF([ test x$subsystem = xlibusb ],
+	[ PKG_CHECK_MODULES([LIBUSB], [libusb],
+		[  ],
+		[ AC_MSG_FAILURE([libusb is required but not found.]) ])
+	])
 
 # Checks for header files.
 AC_HEADER_STDC
