@@ -35,7 +35,7 @@ secure_input(char *buf, size_t buf_size)
 #else
 	struct termios ttymode;
 #endif
-	int pos;
+	size_t pos;
 	int ch;
 
 	// input checking

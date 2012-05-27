@@ -89,7 +89,7 @@ struct usb_msc_csw {
 const char *u3_subsystem_name = "libusb";
 const char *u3_subsystem_help = "'scan' to automatically use the first detected U3 device, or 'vid:pid' if not detected";
 
-struct usb_device *
+static struct usb_device *
 locate_u3_device(uint16_t vid, uint16_t pid)
 {
 	struct usb_bus *bus;

@@ -52,10 +52,9 @@
  * 		U3_PASSWORD_HASH_LEN long.
  */
 void u3_pass_to_hash(const char *password, uint8_t *hash) {
-	unsigned int passlen;
+	unsigned int passlen, i;
 	unsigned int unicode_passlen;
 	uint8_t *unicode_pass;
-	int i;
 
 	passlen = strlen(password);
 	unicode_passlen = (passlen+1)*2;

@@ -21,8 +21,7 @@
 
 void display_progress(unsigned int cur, unsigned int total) {
         unsigned int procent;
-	unsigned int bar_len;
-	int i;
+	unsigned int bar_len, i;
 
 	if (total == 0) return;
 
