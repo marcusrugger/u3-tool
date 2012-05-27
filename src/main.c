@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
+#include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -42,10 +44,11 @@
 #define MAX_FILENAME_STRING_LENGTH 1024
 #define MAX_PASSWORD_LENGTH 1024
 
-char *version = VERSION;
+static char *version = VERSION;
 
 int debug = 0;
-int batch_mode = 0;
+static int batch_mode = 0;
+static int quit = 0;
 
 enum action_t { unknown, load, partition, dump, info, unlock, change_password,
 		enable_security, disable_security, reset_security };
@@ -57,7 +60,7 @@ enum action_t { unknown, load, partition, dump, info, unlock, change_password,
  *
  * @returns	TRUE if user wants to continue else FALSE to abort.
  */
-int confirm() {
+static int confirm(void) {
 	char c;
 	int retval;
 	int done;
@@ -93,14 +96,14 @@ int confirm() {
 /**
  * Symbols of size multiplication factors.
  */
-char factor_symbols[] = " kMGTPE";
+static char factor_symbols[] = " kMGTPE";
 
 /**
  * Print bytes is human readable fashion.
  *
  * @param size	Data size to print
  */
-void print_human_size(uint64_t size) {
+static void print_human_size(uint64_t size) {
 	double fsize = 0;
 	unsigned int factor = 0;
 	
@@ -122,7 +125,7 @@ void print_human_size(uint64_t size) {
  * @returns		U3_SUCCESS if successful, else U3_FAILURE and
  * 			an error string can be obtained using u3_error()
  */
-int get_tries_left(u3_handle_t *device, int *tries) {
+static int get_tries_left(u3_handle_t *device, int *tries) {
 	struct dpart_info dpinfo;
 	struct property_0C security_properties;
 
@@ -151,7 +154,7 @@ int get_tries_left(u3_handle_t *device, int *tries) {
 
 /********************************** Actions ***********************************/
 
-int do_load(u3_handle_t *device, char *iso_filename) {
+static int do_load(u3_handle_t *device, char *iso_filename) {
 	struct stat file_stat;
 	struct part_info pinfo;
 	off_t cd_size;
@@ -186,8 +189,8 @@ int do_load(u3_handle_t *device, char *iso_filename) {
 	}
 
 	if (cd_size > pinfo.cd_size) {
-		fprintf(stderr, "CD image(%ju byte) is to big for current cd "
-			"partition(%llu byte), please repartition device.\n",
+		fprintf(stderr, "CD image (%ju bytes) is to big for current CD "
+			"partition (%llu bytes)\n",
 			(uintmax_t) file_stat.st_size,
 			1ll * U3_SECTOR_SIZE * pinfo.cd_size);
 		return EXIT_FAILURE;
@@ -228,7 +231,7 @@ int do_load(u3_handle_t *device, char *iso_filename) {
 		}
 
 		block_num++;
-	} while (!feof(fp));
+	} while (!feof(fp) && !quit);
 	display_progress(block_num, block_cnt);
 	putchar('\n');
 
@@ -238,7 +241,7 @@ int do_load(u3_handle_t *device, char *iso_filename) {
 	return EXIT_SUCCESS;
 }
 
-int do_partition(u3_handle_t *device, char *size_string) {
+static int do_partition(u3_handle_t *device, char *size_string) {
 	uint64_t size;
 	uint32_t cd_sectors;
 
@@ -263,7 +266,7 @@ int do_partition(u3_handle_t *device, char *size_string) {
 	return EXIT_SUCCESS;
 }
 
-int do_unlock(u3_handle_t *device, char *password) {
+static int do_unlock(u3_handle_t *device, char *password) {
 	int result=0;
 	int tries_left=0;
 
@@ -297,7 +300,7 @@ int do_unlock(u3_handle_t *device, char *password) {
 	}
 }
 
-int do_change_password(u3_handle_t *device, char *password,
+static int do_change_password(u3_handle_t *device, char *password,
 	char *new_password)
 {
 	int result=0;
@@ -335,7 +338,7 @@ int do_change_password(u3_handle_t *device, char *password,
 	}
 }
 
-int do_enable_security(u3_handle_t *device, char *password) {
+static int do_enable_security(u3_handle_t *device, char *password) {
 	if (u3_enable_security(device, password) != U3_SUCCESS) {
 		fprintf(stderr, "u3_enable_security() failed: %s\n",
 			u3_error_msg(device));
@@ -345,7 +348,7 @@ int do_enable_security(u3_handle_t *device, char *password) {
 	return EXIT_SUCCESS;
 }
 
-int do_disable_security(u3_handle_t *device, char *password) {
+static int do_disable_security(u3_handle_t *device, char *password) {
 	int result=0;
 	int tries_left=0;
 
@@ -380,7 +383,7 @@ int do_disable_security(u3_handle_t *device, char *password) {
 	}
 }
 
-int do_reset_security(u3_handle_t *device) {
+static int do_reset_security(u3_handle_t *device) {
 	int result=0;
 
 	// the enable security command is always possible without the correct
@@ -408,7 +411,7 @@ int do_reset_security(u3_handle_t *device) {
 	}
 }
 
-int do_info(u3_handle_t *device) {
+static int do_info(u3_handle_t *device) {
 	struct part_info pinfo;
 	struct dpart_info dpinfo;
 	struct chip_info cinfo;
@@ -484,8 +487,8 @@ int do_info(u3_handle_t *device) {
 	return EXIT_SUCCESS;
 }
 
-int do_dump(u3_handle_t *device) {
-	int retval = EXIT_SUCCESS;
+static int do_dump(u3_handle_t *device) {
+	int retval;
 
 	struct part_info pinfo;
 	struct dpart_info dpinfo;
@@ -595,12 +598,12 @@ int do_dump(u3_handle_t *device) {
 		}
 	}
 
-	return EXIT_SUCCESS;
+	return retval;
 }
 
 /************************************ Main ************************************/
 
-void usage(const char *name) {
+static void usage(const char *name) {
 	printf("u3-tool %s - U3 USB stick manager\n", version);
 	printf("\n");
 	printf("Usage: %s [options] <device name>\n", name);
@@ -622,7 +625,7 @@ void usage(const char *name) {
 	printf("For the device name use:\n  %s\n", u3_subsystem_help);
 }
 
-void print_version() {
+static void print_version(void) {
 	printf("u3-tool %s\n", version);
 	printf("subsystem: %s\n", u3_subsystem_name);
 	printf("\n");
@@ -630,6 +633,10 @@ void print_version() {
 	printf("This is free software; see the source for copying "
 		"conditions. There is NO\nwarranty; not even for "
 		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");
+}
+
+static void set_quit(int sig) {
+	quit = 1;
 }
 
 int main(int argc, char *argv[]) {
@@ -710,6 +717,9 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	device_name = argv[optind];
+
+	assert(signal(SIGINT, set_quit) != SIG_ERR);
+	assert(signal(SIGTERM, set_quit) != SIG_ERR);
 
 	//
 	// open the device

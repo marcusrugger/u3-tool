@@ -30,19 +30,16 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
+#include <assert.h>
 #include <usb.h>
 #include <errno.h>
 #include <regex.h>
 
 // USB maximum packet length
-#define USB_MAX_PACKET_LEN 256
+#define USB_MAX_PACKET_LEN 2048
 
 // USB command block wrapper length
 #define U3_CBWCB_LEN	12
-
-// USB MSC command/status wrapper signatures
-#define CBW_SIGNATURE		0x43425355
-#define CSW_SIGNATURE		0x53425355
 
 // USB MSC command block wrapper data direction bits
 #define CBW_DATA_IN		0x80
@@ -50,7 +47,7 @@
 #define CBW_DATA_NONE		0x00
 #define CBW_FLAG_DIRECTION	0x80
 
-#define U3_DEVICE_TIMEOUT 20000	//2000 millisecs == 2 seconds 
+#define U3_DEVICE_TIMEOUT 2000	//2000 millisecs == 2 seconds 
 
 uint16_t u3_dev_list[][2] = {
 	{ 0x08ec, 0x0020 }, // Verbatim Store 'N Go
@@ -73,7 +70,7 @@ struct u3_usb_handle {
 typedef struct u3_usb_handle u3_usb_handle_t;
 
 struct usb_msc_cbw {
-	uint32_t dCBWSignature;
+	uint8_t dCBWSignature[4];
 	uint32_t dCBWTag;
 	uint32_t dCBWDataTransferLength;
 	uint8_t bmCBWFlags;
@@ -83,7 +80,7 @@ struct usb_msc_cbw {
 } __attribute__ ((packed));
 
 struct usb_msc_csw {
-	uint32_t dCSWSignature;
+	uint8_t dCSWSignature[4];
 	uint32_t dCSWTag;
 	uint32_t dCSWDataResidue;
 	uint8_t bCSWStatus;
@@ -130,7 +127,6 @@ int u3_open(u3_handle_t *device, const char *which)
 
 	int err;
 	char errbuf[U3_MAX_ERROR_LEN];
-	int i;
 
 	// init
 	u3_set_error(device, "");
@@ -166,7 +162,7 @@ int u3_open(u3_handle_t *device, const char *which)
 			return U3_FAILURE;
 		}
 	} else if (strcmp(which, "scan") == 0) {
-		i = 0;
+		int i = 0;
 		u3_device = NULL;
 		while (u3_device == NULL &&
 		       !(u3_dev_list[i][0] == 0 && u3_dev_list[i][1] == 0))
@@ -220,8 +216,13 @@ int u3_open(u3_handle_t *device, const char *which)
 		goto open_fail;
 	}
 	interface_desc = config_desc->interface->altsetting;
-
 	handle_wrapper->interface_num = interface_desc->bInterfaceNumber;
+	err = usb_detach_kernel_driver_np(handle_wrapper->handle, handle_wrapper->interface_num);
+	if (err != 0 && err != -61) {
+		u3_set_error(device, "failed to detach USB device with %s", strerror(errno));
+		goto open_fail;
+	}
+
 	if ((err=usb_claim_interface(handle_wrapper->handle,
 				handle_wrapper->interface_num)) != 0)
 	{
@@ -291,6 +292,8 @@ int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
 		int dxfer_direction, int dxfer_length, uint8_t *dxfer_data,
 		uint8_t *status)
 {
+	unsigned int tag = 1;
+	int res;
 	u3_usb_handle_t *handle_wrapper = (u3_usb_handle_t *) device->dev;
         struct usb_msc_cbw cbw;
         struct usb_msc_csw csw;
@@ -311,16 +314,21 @@ int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
 	}
 
 	// Prepare command
-        memset(&cbw, 0, sizeof(cbw));
-        cbw.dCBWSignature = CBW_SIGNATURE;
+	memset(&cbw, 0, sizeof(cbw));
+	cbw.dCBWSignature[0] = 'U';
+	cbw.dCBWSignature[1] = 'S';
+	cbw.dCBWSignature[2] = 'B';
+	cbw.dCBWSignature[3] = 'C';
 	cbw.dCBWDataTransferLength = dxfer_length;
-	cbw.bmCBWFlags |= (dxfer_direction & CBW_FLAG_DIRECTION);
-        cbw.bCBWCBLength = U3_CBWCB_LEN;
-        memcpy(&(cbw.CBWCB), cmd, U3_CBWCB_LEN);
+	cbw.bmCBWFlags = dxfer_direction & CBW_FLAG_DIRECTION;
+	cbw.dCBWTag = tag;
+	cbw.bCBWLUN = 1;
+	cbw.bCBWCBLength = U3_CBWCB_LEN;
+	memcpy(&(cbw.CBWCB), cmd, U3_CBWCB_LEN);
 
 	// send command
-        if (usb_bulk_write(handle_wrapper->handle, handle_wrapper->ep_out,
-			(char *) &cbw, sizeof(cbw), U3_DEVICE_TIMEOUT)
+        if ((res = usb_bulk_write(handle_wrapper->handle, handle_wrapper->ep_out,
+			(char *) &cbw, sizeof(cbw), U3_DEVICE_TIMEOUT))
                         != sizeof(cbw))
         {
 		u3_set_error(device, "Failed executing scsi command: "
@@ -338,10 +346,10 @@ int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
 			if (plen > USB_MAX_PACKET_LEN)
 				plen = USB_MAX_PACKET_LEN;
 
-			if (usb_bulk_write(handle_wrapper->handle,
+			if ((res = usb_bulk_write(handle_wrapper->handle,
 					handle_wrapper->ep_out,
 					(char *) dxfer_data+bytes_send, plen,
-					U3_DEVICE_TIMEOUT) != plen)
+					U3_DEVICE_TIMEOUT)) < 0)
 			{
 				u3_set_error(device, "Failed executing scsi command: "
 					"Could not write data to device");
@@ -351,9 +359,9 @@ int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
 			bytes_send += plen;
 		}
 	} else if (dxfer_direction == CBW_DATA_IN) {
-		if (usb_bulk_read(handle_wrapper->handle, handle_wrapper->ep_in,
+		if ((res = usb_bulk_read(handle_wrapper->handle, handle_wrapper->ep_in,
 				(char *) dxfer_data, dxfer_length,
-				U3_DEVICE_TIMEOUT) <= 0)
+				U3_DEVICE_TIMEOUT)) < 0)
 		{
 			u3_set_error(device, "Failed executing scsi command: "
 				"Could not read data from device");
@@ -361,16 +369,20 @@ int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
 		}
 	}
 
+	memset(&csw, 0, sizeof(csw));
+
 	// read command status
-        if (usb_bulk_read(handle_wrapper->handle, handle_wrapper->ep_in,
-			(char *) &csw, sizeof(csw), U3_DEVICE_TIMEOUT)
-                        <= 0)
+        if ((res = usb_bulk_read(handle_wrapper->handle, handle_wrapper->ep_in,
+			(char *) &csw, sizeof(csw), U3_DEVICE_TIMEOUT))
+                        < 0)
         {
 		u3_set_error(device, "Failed executing scsi command: "
 			"Could not read command status from device");
 		return U3_FAILURE;
         }
 
+	assert(tag == csw.dCSWTag);
+	tag++;
         *status = csw.bCSWStatus;
 
 	return U3_SUCCESS;

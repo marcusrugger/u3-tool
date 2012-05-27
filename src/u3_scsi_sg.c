@@ -32,6 +32,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <string.h>
 
 #include <linux/cdrom.h>
 #include <scsi/sg.h>
@@ -124,23 +125,23 @@ int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
 	// Prepare command
 	memset(&io_hdr, 0, sizeof(sg_io_hdr_t));
 	io_hdr.interface_id = 'S';			// fixed
-	io_hdr.cmd_len = U3_CMD_LEN;			// length of command in bytes
-	// io_hdr.iovec_count = 0;   			// don't use iovector stuff
-	io_hdr.mx_sb_len = sizeof(sense_buf);		// sense buffer size. do we use this???
 	io_hdr.dxfer_direction = dxfer_direction;	// Select data direction
+	io_hdr.cmd_len = U3_CMD_LEN;			// length of command in bytes
+	io_hdr.mx_sb_len = 0;		// sense buffer size. do we use this???
+	io_hdr.iovec_count = 0;   			// don't use iovector stuff
 	io_hdr.dxfer_len = dxfer_length;		// Size of data transfered
 	io_hdr.dxferp = dxfer_data;			// Data buffer to transfer
 	io_hdr.cmdp = cmd;				// Command buffer to execute
 	io_hdr.sbp = sense_buf;				// Sense buffer
 	io_hdr.timeout = SG_TIMEOUT;			// timeout
-	// io_hdr.flags = 0;	 			// take defaults: indirect IO, etc 
+	io_hdr.flags = 0;	 			// take defaults: indirect IO, etc 
 	// io_hdr.pack_id = 0;				// internal packet. used by te program to recognize packets
 	// io_hdr.usr_ptr = NULL;			// user data
 
 	// preform ioctl on device
 	if (ioctl(*sg_fd, SG_IO, &io_hdr) < 0) {
 		u3_set_error(device, "Failed executing scsi command: "
-				"SG_IO ioctl Failed");
+				"SG_IO ioctl failed with %s", strerror(errno));
 		return U3_FAILURE;
 	}
 
