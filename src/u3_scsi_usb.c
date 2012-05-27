@@ -350,7 +350,7 @@ int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
 	} else if (dxfer_direction == CBW_DATA_IN) {
 		if (usb_bulk_read(handle_wrapper->handle, handle_wrapper->ep_in,
 				(char *) dxfer_data, dxfer_length,
-				U3_DEVICE_TIMEOUT) != dxfer_length)
+				U3_DEVICE_TIMEOUT) <= 0)
 		{
 			u3_set_error(device, "Failed executing scsi command: "
 				"Could not read data from device");
@@ -361,7 +361,7 @@ int u3_send_cmd(u3_handle_t *device, uint8_t cmd[U3_CMD_LEN],
 	// read command status
         if (usb_bulk_read(handle_wrapper->handle, handle_wrapper->ep_in,
 			(char *) &csw, sizeof(csw), U3_DEVICE_TIMEOUT)
-                        != sizeof(csw))
+                        <= 0)
         {
 		u3_set_error(device, "Failed executing scsi command: "
 			"Could not read command status from device");
