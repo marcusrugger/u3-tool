@@ -177,7 +177,7 @@ int u3_partition(u3_handle_t *device, uint32_t cd_size) {
 		return U3_FAILURE;
 	}
 	if (cd_size > device_properties.device_size) {
-		u3_set_error(device, "Requested CD size is to big for device");
+		u3_set_error(device, "Requested CD size is larger than device (%ull bytes)", device_properties.device_size << 9ULL);
 		return U3_FAILURE;
 	}
 
