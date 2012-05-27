@@ -1,4 +1,13 @@
-0.3:
+1.0 Daniel J Blueman <daniel@quora.org>
+ - Fix behaviour with newer U3 devices
+ - Printing fixes
+ - Detach mass-storage prior to USB access
+ - Gracefully quit with Ctrl-C
+ - Print data partition size when too small
+ - Limit update printing rate
+ - Fix linking to libusb; recommended over SG
+
+0.3
  - Detect correct subsystem from configure.
  - Use MinGW/MSYS to build on MS Windows
  - Hide password input under MS Windows
