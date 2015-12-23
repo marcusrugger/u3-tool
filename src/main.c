@@ -459,6 +459,7 @@ static int do_info(u3_handle_t *device) {
 	printf("Total device size:   ");
 	print_human_size(1ll * U3_SECTOR_SIZE * device_properties.device_size);
 	printf(" (%llu bytes)\n", 1ll * U3_SECTOR_SIZE * device_properties.device_size);
+	fflush(stdout);    /* flush stdout stream to redirect stdout*/ 
 
 	printf("CD size:             ");
 	print_human_size(1ll * U3_SECTOR_SIZE * pinfo.cd_size);
